@@ -17,6 +17,9 @@ app_started = False
 dpg.create_context()
 
 def data_load() -> None:
+    """_summary_
+        Loads programs save data - currently just last path
+    """
     global default_path
     update_status("Loading save data...",0)
     logger.debug("Loading save data")
@@ -30,6 +33,9 @@ def data_load() -> None:
     default_path = new_path if new_path != "" else default_path
 
 def reset() -> None:
+    """_summary_
+    Resets the program
+    """
     global locale_csv, locale_languages, loaded_flags
     
     logger.debug("Removing old UI elements...")
@@ -48,8 +54,15 @@ def reset() -> None:
     locale_csv = {}
     locale_languages = None
     
-def load_language_flags(language_list: list) -> None:
+def load_language_flags(language_list: list | tuple) -> None:
+    """_summary_
+    Loads flags for the supplied language codes
+    
+    Args:
+        language_list (list | tuple)
+    """
     global loaded_flags
+    
     update_status("Loading flags...",0)
     logger.debug("Loading flags...")
     
@@ -69,29 +82,45 @@ def load_language_flags(language_list: list) -> None:
             logger.info(f"Couldn't find flag for language '{lang}'. Missing flag?")
 
 def get_save_path() -> str:
+    """
+    Gets path for save folder\n\n
+    Windows: AppData/Roaming
+    Linux/Unix based: ~/.Glee/
+    """
     global os_type
+    
     retval = None
     if os_type == "Windows":
         retval = os.getenv("APPDATA") + "\\Glee\\"
     else:
         retval = os.getenv("HOME") + "/.Glee/"
-        
+    
+    # If the folder doesnt exist, create it
     if not os.path.exists(retval):
         logger.info(f"Save folder not found, creating...")
         os.makedirs(retval)
+        
     logger.debug(f"Save path is '{retval}'")
     return retval
 
-def open_locale_for(item_string, a):
+def open_locale_for(item_string: str, appdata: dict) -> None:
+    """_summary_
+    Opens locale for given item string
+    
+    Args:
+        item_string (str): sender, their tags correspond to item strings in the CSV
+        appdata (Any): DearPyGui argument
+    """
     global locale_csv, locale_languages
     
     logger.debug(f"Switching to string '{item_string}'")
-    dpg.set_value("string_key", item_string)
-    for field in enumerate(locale_languages):
-        dpg.set_value(f"locale_field.{field[1]}", locale_csv[item_string][field[0]])
-        dpg.set_item_user_data(f"locale_field.{field[1]}", {"locale_string":item_string,"language":locale_languages[field[0]], "lang_index":field[0]})
+    dpg.set_value("string_key", item_string) # Set title for right pane to item string
+    
+    for index, lang in enumerate(locale_languages):
+        dpg.set_value(f"locale_field.{lang}", locale_csv[item_string][index])
+        dpg.set_item_user_data(f"locale_field.{lang}", {"locale_string":item_string,"language":locale_languages[index], "lang_index":index})
 
-def load_file(sender, app_data) -> None:
+def load_file(sender: str, app_data: dict) -> None:
     """_summary_
     # Loads CSV file
     
@@ -107,19 +136,19 @@ def load_file(sender, app_data) -> None:
     update_status("Loading CSV file...",1)
     logger.debug("Loading CSV file")
     
+    # If csv_path isnt None = something was already loaded. Reset the app.
     if csv_path != None:
         logger.info("One file has been loaded already, resetting app...")
         reset()
     
-    print(app_data)
     csv_path = app_data["file_path_name"]
-    with open(app_data["file_path_name"], newline='', encoding="utf-8") as csvfile:
-        spamreader = csv.reader(csvfile, delimiter=';', quotechar='|')
-        for row in spamreader:
-            row_translations = []
+    with open(csv_path, newline='', encoding="utf-8") as open_csv:
+        csv_reader = csv.reader(open_csv, delimiter=';', quotechar='|')
+        for row in csv_reader:
+            translations = []
             for i in range(1,len(row)):
-                row_translations.append(row[i])
-            locale_csv.update({row[0]: row_translations})
+                translations.append(row[i])
+            locale_csv.update({row[0]: translations})
             
     generate_buttons(locale_csv)
     load_language_flags(locale_languages)
