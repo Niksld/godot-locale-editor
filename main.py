@@ -7,6 +7,7 @@ from languages import languages
 
 
 locale_csv: dict = {}
+original_csv: dict = {}
 csv_path = None
 default_path = os.path.expanduser("~/Desktop")
 save_path = None
@@ -79,7 +80,7 @@ def load_language_flags(language_list: list | tuple) -> None:
                     dpg.add_static_texture(width=width, height=height, default_value=data, tag=f"flag.{lang}")
                     loaded_flags.append(f"flag.{lang}")
         except TypeError:
-            logger.info(f"Couldn't find flag for language '{lang}'. Missing flag?")
+            logger.debug(f"Couldn't find flag for language '{lang}'. Missing flag?")
 
 def get_save_path() -> str:
     """
@@ -131,7 +132,7 @@ def load_file(sender: str, app_data: dict) -> None:
     format : {"uid": [val1, val2, val3],
             ...}
     """
-    global locale_csv, save_path, locale_languages, csv_path
+    global locale_csv, save_path, locale_languages, csv_path, original_csv
     
     update_status("Loading CSV file...",1)
     logger.debug("Loading CSV file")
@@ -149,7 +150,8 @@ def load_file(sender: str, app_data: dict) -> None:
             for i in range(1,len(row)):
                 translations.append(row[i])
             locale_csv.update({row[0]: translations})
-            
+    
+    original_csv = locale_csv
     generate_buttons(locale_csv)
     load_language_flags(locale_languages)
     generate_input_fields()
@@ -231,7 +233,7 @@ def generate_input_fields():
                 tip_lang = "undefined"
             dpg.add_text(tip_lang)
 
-        temp = dpg.add_input_text(hint=lang[1], parent="editing_window", width=dpg.get_item_width("editing_window")-5, height=65, pos=(55, lang[0]*45+25), callback=update_translation, tag=f"locale_field.{lang[1]}")
+        temp = dpg.add_input_text(hint=lang[1], parent="editing_window", width=dpg.get_item_width("editing_window")-15, height=65, pos=(55, lang[0]*45+25), callback=update_translation, tag=f"locale_field.{lang[1]}")
         dpg.set_value(temp, lang[1])
 
 def update_status(message: str, severity: str | int = None) -> None:
@@ -268,6 +270,20 @@ def update_translation(s, new_string, data):
     global locale_csv
     locale_csv[data["locale_string"]][data["lang_index"]] = new_string  
 
+def file_changed() -> bool:
+    global locale_csv, original_csv
+    
+    if locale_csv == original_csv:
+        return False
+    
+    return True
+
+def exit_app():
+    if file_changed():
+        pass # pop-up prompt to save
+    else:
+        dpg.stop_dearpygui()
+
 logger.debug("Starting Glee")
 save_path = get_save_path() 
 data_load()
@@ -283,6 +299,9 @@ dpg.create_viewport(title='Glee - Localization Editor', width=1000, height=700, 
 with dpg.file_dialog(directory_selector=False, show=False, callback=load_file, id="file_dialog", width=700 ,height=400, modal=True, default_path=default_path):
     dpg.add_file_extension(".csv", color=(0, 255, 0, 255), custom_text="[CSV]")
 
+# Dialog box
+with dpg.window(label="Dialog box", width=300, height=150, no_collapse=True, no_resize=True, modal=True, tag="dialog") as dialog:
+    pass
 # Main window
 with dpg.window(label="Glee - Localization Editor", width=dpg.get_viewport_width(), height=dpg.get_viewport_height(), no_move=True, no_collapse=True, no_resize=True, no_title_bar=True) as main_window:
     with dpg.menu_bar():
@@ -291,7 +310,7 @@ with dpg.window(label="Glee - Localization Editor", width=dpg.get_viewport_width
             dpg.add_menu_item(label="Save as..", enabled=False, tag="saveasbutton")
             dpg.add_menu_item(label="Load locale .csv", callback=lambda: dpg.show_item("file_dialog"))
             dpg.add_menu_item(label="Close CSV File", callback=lambda: (reset(), update_status("No CSV file loaded",1)))
-            dpg.add_menu_item(label="Exit") # TODO: Check if file is saved, if not prompt user to save
+            dpg.add_menu_item(label="Exit", callback=exit_app)
         with dpg.menu(label="Options"):
             dpg.add_menu_item(label="Preferences")
             
