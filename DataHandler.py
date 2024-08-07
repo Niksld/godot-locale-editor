@@ -1,5 +1,4 @@
 from loguru import logger
-#from main import reset
 from StatusHandler import update_status
 from platform import system as platform_system
 import os
@@ -20,17 +19,17 @@ def reset() -> None:
     global locale_csv, locale_languages, loaded_flags
     
     logger.debug("Removing old UI elements...")
-    for item in dpg.get_item_children("button_list")[1]:
+    for item in dpg.get_item_children("glee.window.buttons")[1]:
         dpg.delete_item(item)
         
-    for item in dpg.get_item_children("editing_window")[1]:
+    for item in dpg.get_item_children("glee.window.edit")[1]:
         dpg.delete_item(item)
     
     logger.debug("Unloading flags...")
     for flag in loaded_flags:
         dpg.delete_item(flag)
     
-    dpg.set_value("string_key", "No string selected")
+    dpg.set_value("glee.text.string_key", "No string selected")
     
     locale_csv = {}
     locale_languages = None
@@ -164,8 +163,8 @@ def load_file(data: dict) -> bool:
     save_last_path(data["current_path"])
         
     update_status("CSV loaded successfully",-1)
-    dpg.configure_item("savebutton", enabled=True)
-    dpg.configure_item("saveasbutton", enabled=True)
+    dpg.configure_item("glee.menu.save", enabled=True)
+    dpg.configure_item("glee.menu.save_as", enabled=True)
     return True
 
 def save_file():
@@ -178,16 +177,14 @@ def save_file():
             temp.append(key)
             # and invert again to get the correct order
             writer.writerow(temp[::-1])
-        
-    # update status
-    pass
+
+    update_status("File saved successfully.",-1)
 
 def file_changed() -> bool:
     global locale_csv, original_csv
     
     if locale_csv == original_csv:
         return False
-    
     return True
 
 def get_desktop_path() -> str:

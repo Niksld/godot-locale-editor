@@ -5,6 +5,8 @@ import DataHandler as dh
 from StatusHandler import update_status
 from KeyboardWorkaround import letter_workaround
 
+button_list = []
+
 dpg.create_context()
 
 def open_locale_for(item_string: str, appdata: dict) -> None:
@@ -17,8 +19,9 @@ def open_locale_for(item_string: str, appdata: dict) -> None:
     """
     global locale_csv
     
+    item_string = item_string.removeprefix("glee.loaded_string.")    
     logger.debug(f"Switching to string '{item_string}'")
-    dpg.set_value("string_key", item_string) # Set title for right pane to item string
+    dpg.set_value("glee.text.string_key", item_string) # Set title for right pane to item string
     
     for index, lang in enumerate(dh.locale_languages):
         dpg.set_value(f"locale_field.{lang}", dh.locale_csv[item_string][index])
@@ -39,7 +42,8 @@ def generate_buttons(csv: dict) -> None:
             pass # TODO
         
         # Label could be customized, but we still have to get the item name somehow. thus tag and label
-        dpg.add_button(label=key, tag=key,width=270, height=25, parent="button_list", callback=open_locale_for) 
+        dpg.add_button(label=key, tag=f"glee.loaded_string.{key}",width=270, height=25, parent="glee.window.buttons", callback=open_locale_for)
+        button_list.append(key) 
 
 def generate_input_fields():
     global languages
@@ -51,9 +55,9 @@ def generate_input_fields():
     
     for lang in enumerate(dh.locale_languages):
         if dpg.does_alias_exist(f"flag.{dh.locale_languages[lang[0]]}"):
-            ttip_parent = dpg.add_image(f"flag.{dh.locale_languages[lang[0]]}", parent="editing_window", pos=(10, lang[0]*45+25), width=30, height=20, tag=f"img.flag.{dh.locale_languages[lang[0]]}")
+            ttip_parent = dpg.add_image(f"flag.{dh.locale_languages[lang[0]]}", parent="glee.window.edit", pos=(10, lang[0]*45+25), width=30, height=20, tag=f"img.flag.{dh.locale_languages[lang[0]]}")
         else:
-            ttip_parent = dpg.add_text(dh.locale_languages[lang[0]], parent="editing_window", pos=(10, lang[0]*45+25), tag=f"img.flag.{dh.locale_languages[lang[0]]}")
+            ttip_parent = dpg.add_text(dh.locale_languages[lang[0]], parent="glee.window.edit", pos=(10, lang[0]*45+25), tag=f"img.flag.{dh.locale_languages[lang[0]]}")
 
         with dpg.tooltip(ttip_parent):
             try:
@@ -62,7 +66,7 @@ def generate_input_fields():
                 tip_lang = "undefined"
             dpg.add_text(tip_lang)
 
-        temp = dpg.add_input_text(hint=lang[1], parent="editing_window", width=dpg.get_item_width("editing_window")-15, height=65, pos=(55, lang[0]*45+25), callback=update_translation, tag=f"locale_field.{lang[1]}")
+        temp = dpg.add_input_text(hint=lang[1], parent="glee.window.edit", width=dpg.get_item_width("glee.window.edit")-15, height=65, pos=(55, lang[0]*45+25), callback=update_translation, tag=f"locale_field.{lang[1]}")
         dpg.set_value(temp, lang[1])
 
 def update_translation(sender, new_string, data):
@@ -85,7 +89,9 @@ def create_ui(s, appdata):
     global locale_csv
     dh.load_file(appdata)
     generate_buttons(dh.locale_csv)
-    generate_input_fields()    
+    generate_input_fields()
+    open_locale_for(button_list[0], None)
+    dpg.configure_item("glee.menu.close_file",enabled=True)  
 
 logger.debug("Starting Glee")
 dh.data_load()
@@ -100,28 +106,28 @@ with dpg.font_registry():
 # Viewport
 dpg.create_viewport(title='Glee - Localization Editor', width=1000, height=700, resizable=False)
 
-# File Dialog
-with dpg.file_dialog(directory_selector=False, show=False, callback=create_ui, id="file_dialog", width=700 ,height=400, modal=True, default_path=dh.get_last_path()):
+# File Dialogs
+with dpg.file_dialog(label="Open file", directory_selector=False, show=False, callback=create_ui, id="glee.window.open_file_dialog", width=700 ,height=400, modal=True, default_path=dh.get_last_path()):
     dpg.add_file_extension(".csv", color=(0, 255, 0, 255), custom_text="[CSV]")
 
 # Main window
 with dpg.window(label="Glee - Localization Editor", width=dpg.get_viewport_width(), height=dpg.get_viewport_height(), no_move=True, no_collapse=True, no_resize=True, no_title_bar=True) as main_window:
     with dpg.menu_bar():
         with dpg.menu(label="File"):
-            dpg.add_menu_item(label="Save", enabled=False, tag="savebutton", callback=dh.save_file)
-            dpg.add_menu_item(label="Save as..", enabled=False, tag="saveasbutton")
-            dpg.add_menu_item(label="Load locale .csv", callback=lambda: dpg.show_item("file_dialog"))
-            dpg.add_menu_item(label="Close CSV File", callback=lambda: (dh.reset(), update_status("No CSV file loaded",1)))
+            dpg.add_menu_item(label="Save", enabled=False, tag="glee.menu.save", callback=dh.save_file)
+            dpg.add_menu_item(label="Save as..", enabled=False, tag="glee.menu.save_as")
+            dpg.add_menu_item(label="Load locale .csv", callback=lambda: dpg.show_item("glee.window.open_file_dialog"))
+            dpg.add_menu_item(label="Close CSV File", callback=lambda: (dh.reset(), update_status("No CSV file loaded",1), dpg.configure_item("glee.menu.close_file", enabled=False)), enabled=False, tag="glee.menu.close_file")
             dpg.add_menu_item(label="Exit", callback=exit_app)
         with dpg.menu(label="Options"):
             dpg.add_menu_item(label="Preferences")
             
     dpg.add_text("String", pos=(125,25))
-    dpg.add_text("No string selected", pos=(310,25), tag="string_key")
+    dpg.add_text("No string selected", pos=(310,25), tag="glee.text.string_key")
     dpg.add_text("Status:", pos=(10,dpg.get_viewport_height()-65))
-    dpg.add_text("No CSV file loaded", color=(255,238,0),tag="status_text", pos=(60,dpg.get_viewport_height()-65))
-    dpg.add_child_window(width=300,height=dpg.get_viewport_height()-115, pos=(0,50), tag="button_list")
-    dpg.add_child_window(width=670,height=dpg.get_viewport_height()-115, pos=(305,50), tag="editing_window")
+    dpg.add_text("No CSV file loaded", color=(255,238,0),tag="glee.text.status", pos=(60,dpg.get_viewport_height()-65))
+    dpg.add_child_window(width=300,height=dpg.get_viewport_height()-115, pos=(0,50), tag="glee.window.buttons")
+    dpg.add_child_window(width=670,height=dpg.get_viewport_height()-115, pos=(305,50), tag="glee.window.edit")
 
 dpg.setup_dearpygui()
 dpg.show_viewport()

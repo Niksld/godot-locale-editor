@@ -28,5 +28,5 @@ def update_status(message: str, severity: str | int = None) -> None:
         case _:
             color = [255,255,255]
 
-    dpg.set_value("status_text", message)
-    dpg.configure_item("status_text", color=color)
+    dpg.set_value("glee.text.status", message)
+    dpg.configure_item("glee.text.status", color=color)
