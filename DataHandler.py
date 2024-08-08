@@ -166,7 +166,11 @@ def load_file(data: dict) -> bool:
             translations = []
             for i in range(1,len(row)):
                 translations.append(row[i])
-            locale_csv.update({row[0]: translations})
+            try:
+                locale_csv.update({row[0]: translations})
+            except IndexError:
+                update_status("Failed to load - invalid CSV", 4)
+                return False
     
     original_csv = locale_csv
     try:
