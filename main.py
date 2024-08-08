@@ -9,6 +9,21 @@ button_list = []
 
 dpg.create_context()
 
+# Set Font + Unicode characters
+with dpg.font_registry():
+    with dpg.font("./fonts/ubuntu/Ubuntu-R.ttf", 16) as ubuntu_reg:
+        dpg.add_font_range(0x0100, 0x25ff)
+    dpg.bind_font(ubuntu_reg)
+    
+# Handle shortcuts
+def shortcut_handler():
+    if dpg.is_key_pressed(dpg.mvKey_S):
+        dh.save_file()
+
+with dpg.handler_registry():
+    dpg.add_key_down_handler(dpg.mvKey_Control, callback=shortcut_handler)
+    
+# --- GUI Methods ---
 def open_locale_for(item_string: str, appdata: dict) -> None:
     """
     Opens locale for given item string
@@ -27,7 +42,8 @@ def open_locale_for(item_string: str, appdata: dict) -> None:
         dpg.set_value(f"locale_field.{lang}", dh.locale_csv[item_string][index])
         dpg.set_item_user_data(f"locale_field.{lang}", {"locale_string":item_string,"language":dh.locale_languages[index], "lang_index":index})
 
-def generate_buttons(csv: dict) -> None: 
+def generate_buttons(csv: dict) -> None:
+    """Generates buttons for each string key""" 
     logger.debug("Creating buttons")
 
     for i in enumerate(csv.items()):
@@ -46,6 +62,7 @@ def generate_buttons(csv: dict) -> None:
         button_list.append(key) 
 
 def generate_input_fields():
+    """Generates input field for each language"""
     global languages
     logger.debug("Creating input fields ...")
     
@@ -72,7 +89,6 @@ def generate_input_fields():
 def update_translation(sender, new_string, data):
     global locale_csv, letter_workaround
     
-    
     # Workaround because DPG has a bug with input_text and Latin ext. characters 
     if any(letter in new_string for letter in list(letter_workaround.keys())):
         for corrupt_letter, correct_letter in letter_workaround.items():
@@ -87,6 +103,7 @@ def exit_app():
 
 def create_ui(s, appdata):
     global locale_csv
+    
     dh.load_file(appdata)
     generate_buttons(dh.locale_csv)
     generate_input_fields()
@@ -94,14 +111,7 @@ def create_ui(s, appdata):
     dpg.configure_item("glee.menu.close_file",enabled=True)  
 
 logger.debug("Starting Glee")
-dh.data_load()
-
-# Set Font + Unicode characters
-with dpg.font_registry():
-    with dpg.font("./fonts/ubuntu/Ubuntu-R.ttf", 16) as ubuntu_reg:
-        dpg.add_font_range(0x0100, 0x25ff)
-    dpg.bind_font(ubuntu_reg)
-    
+dh.data_load() # Attempt to load last path
 
 # Viewport
 dpg.create_viewport(title='Glee - Localization Editor', width=1000, height=700, resizable=False)
@@ -129,6 +139,7 @@ with dpg.window(label="Glee - Localization Editor", width=dpg.get_viewport_width
     dpg.add_child_window(width=300,height=dpg.get_viewport_height()-115, pos=(0,50), tag="glee.window.buttons")
     dpg.add_child_window(width=670,height=dpg.get_viewport_height()-115, pos=(305,50), tag="glee.window.edit")
 
+# Rest of the DPG setup
 dpg.setup_dearpygui()
 dpg.show_viewport()
 dpg.start_dearpygui()

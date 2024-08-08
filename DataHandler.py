@@ -8,13 +8,13 @@ import csv
 csv_path = None
 save_path = None # gets inicialized to path
 locale_csv: dict = {}
-original_csv: dict = {} 
+original_csv: dict = {}
 locale_languages = None
 loaded_flags = []
 
 def reset() -> None:
     """
-    Resets the program
+    Resets the program to it's default state.
     """
     global locale_csv, locale_languages, loaded_flags
     
@@ -35,8 +35,8 @@ def reset() -> None:
     locale_languages = None
 
 def data_load() -> None:
-    """_summary_
-        Loads programs save data - currently just last path
+    """
+        Loads programs save data - currently just last path.
     """
     global default_path
     logger.debug("Loading save data")
@@ -51,7 +51,7 @@ def data_load() -> None:
 
 def get_langs() -> None:
     """
-    Sets the locale_languages variable to a list of languages
+        Sets the locale_languages variable to a list of languages
     """
     global locale_languages, locale_csv
     
@@ -71,7 +71,7 @@ def get_langs() -> None:
             break
 
 def load_language_flags(language_list: list | tuple) -> None:
-    """_summary_
+    """
     Loads flags for the supplied language codes
     
     Args:
@@ -82,8 +82,9 @@ def load_language_flags(language_list: list | tuple) -> None:
     update_status("Loading flags...",0)
     logger.debug("Loading flags...")
     
-    if language_list == None:
+    if language_list == None: # Contrary to PyLance, this code IS reachable. Doesn't mean you want to reach it.
         logger.error("Language list is None, did we load an empty or corrupt CSV file?")
+        update_status("Failed to load flags.",2)
         return
     
     for lang in language_list:
@@ -119,7 +120,7 @@ def get_save_path() -> str:
     return retval
 
 def load_file(data: dict) -> bool:
-    """_summary_
+    """
     # Loads CSV file
     
     Expects a semicolon delimiter. Take the file, take first item in row
@@ -168,8 +169,14 @@ def load_file(data: dict) -> bool:
     return True
 
 def save_file():
+    """Saves the locale CSV."""
     global csv_path, locale_csv
-    # save the file to CSV
+    
+    if locale_csv == {}:
+        logger.debug("Attempting to save non-existant CSV file, ignore.")
+        # pop-up dialog with message that no save file is loaded
+        return
+    
     with open(csv_path, encoding="utf-8", mode="w", newline="") as csvfile:
         writer = csv.writer(csvfile, delimiter=';', quotechar='|')
         for key, val in locale_csv.items():
@@ -181,6 +188,10 @@ def save_file():
     update_status("File saved successfully.",-1)
 
 def file_changed() -> bool:
+    """Checks if the locale CSV has been modified.
+    Returns: 
+        bool
+    """
     global locale_csv, original_csv
     
     if locale_csv == original_csv:
@@ -188,7 +199,7 @@ def file_changed() -> bool:
     return True
 
 def get_desktop_path() -> str:
-    """_summary_
+    """
     Gets the desktop path based on user's system
     Returns:
         str: path to ~/Desktop
@@ -196,6 +207,9 @@ def get_desktop_path() -> str:
     return os.path.expanduser("~/Desktop")
 
 def save_last_path(path: str) -> None:
+    """
+    Save last used path for file_dialog
+    """
     try:
         with open(save_path+"data.dat", encoding="utf-8", mode="w") as f:
             f.write(path)
@@ -213,4 +227,4 @@ def get_last_path() -> str:
     else:
         return os.environ("~/Desktop")
 
-save_path = get_save_path()
+save_path = get_save_path() # We have to get it for the first time, yknow?
