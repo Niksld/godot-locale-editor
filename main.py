@@ -24,7 +24,7 @@ with dpg.handler_registry():
     dpg.add_key_down_handler(dpg.mvKey_Control, callback=shortcut_handler)
     
 # --- GUI Methods ---
-def open_locale_for(item_string: str, appdata: dict) -> None:
+def open_locale_for(item_string: str, a: dict) -> None:
     """
     Opens locale for given item string
     
@@ -102,26 +102,29 @@ def exit_app():
     dpg.stop_dearpygui()
 
 def create_ui(s, appdata):
-    global locale_csv
+    global locale_csv, button_list
     
-    dh.load_file(appdata)
-    generate_buttons(dh.locale_csv)
-    generate_input_fields()
-    open_locale_for(button_list[0], None)
-    dpg.configure_item("glee.menu.close_file",enabled=True)  
+    if dh.load_file(appdata):
+        generate_buttons(dh.locale_csv)
+        generate_input_fields()
+        open_locale_for(button_list[0], None)
+        dpg.configure_item("glee.menu.close_file",enabled=True)
+        dpg.set_viewport_title(f"{dh.VIEWPORT_LABEL} - {list(appdata['selections'].keys())[0]}")
+    else:
+        dh.reset()
 
 logger.debug("Starting Glee")
 dh.data_load() # Attempt to load last path
 
 # Viewport
-dpg.create_viewport(title='Glee - Localization Editor', width=1000, height=700, resizable=False)
+dpg.create_viewport(title=f'{dh.VIEWPORT_LABEL}', width=1000, height=700, resizable=False)
 
 # File Dialogs
 with dpg.file_dialog(label="Open file", directory_selector=False, show=False, callback=create_ui, id="glee.window.open_file_dialog", width=700 ,height=400, modal=True, default_path=dh.get_last_path()):
     dpg.add_file_extension(".csv", color=(0, 255, 0, 255), custom_text="[CSV]")
 
 # Main window
-with dpg.window(label="Glee - Localization Editor", width=dpg.get_viewport_width(), height=dpg.get_viewport_height(), no_move=True, no_collapse=True, no_resize=True, no_title_bar=True) as main_window:
+with dpg.window(label="", width=dpg.get_viewport_width(), height=dpg.get_viewport_height(), no_move=True, no_collapse=True, no_resize=True, no_title_bar=True) as main_window:
     with dpg.menu_bar():
         with dpg.menu(label="File"):
             dpg.add_menu_item(label="Save", enabled=False, tag="glee.menu.save", callback=dh.save_file)

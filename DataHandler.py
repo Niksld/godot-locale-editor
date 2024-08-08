@@ -4,6 +4,7 @@ from platform import system as platform_system
 import os
 import dearpygui.dearpygui as dpg
 import csv
+from supported_languages import languages
 
 csv_path = None
 save_path = None # gets inicialized to path
@@ -11,6 +12,7 @@ locale_csv: dict = {}
 original_csv: dict = {}
 locale_languages = None
 loaded_flags = []
+VIEWPORT_LABEL = "Glee Localization Editor"
 
 def reset() -> None:
     """
@@ -33,6 +35,9 @@ def reset() -> None:
     
     locale_csv = {}
     locale_languages = None
+    dpg.set_viewport_title(f"{VIEWPORT_LABEL}")
+    
+    logger.debug("Reset done!")
 
 def data_load() -> None:
     """
@@ -69,6 +74,15 @@ def get_langs() -> None:
             locale_languages = item[1]
             logger.debug("Got first non-comment line. This should be our header.")
             break
+    
+    valid_langs = list(languages.keys())
+    for lang in locale_languages:
+        if lang == "" or lang == "keys" or lang == "key":
+            continue
+        
+        if lang not in valid_langs:
+            logger.error(f"'{lang}' was not recognized as a valid language. CSV is invalid.")
+            raise ValueError(f"{lang} is not a valid language. CSV is invalid.")
 
 def load_language_flags(language_list: list | tuple) -> None:
     """
@@ -146,7 +160,8 @@ def load_file(data: dict) -> bool:
     csv_path = list(data["selections"].items())[0][1]
     
     with open(csv_path, newline='', encoding="utf-8") as open_csv:
-        csv_reader = csv.reader(open_csv, delimiter=';', quotechar='|')
+        csv_reader = csv.reader(open_csv, delimiter=';', quotechar='|', dialect="excel")
+        
         for row in csv_reader:
             translations = []
             for i in range(1,len(row)):
@@ -154,20 +169,48 @@ def load_file(data: dict) -> bool:
             locale_csv.update({row[0]: translations})
     
     original_csv = locale_csv
-    get_langs()
-    load_language_flags(locale_languages)
+    try:
+        get_langs()
+        load_language_flags(locale_languages)
+    except ValueError:
+        update_status("Failed to load - invalid CSV keys", 4)
+        return False
     
     
-    logger.debug("UI Done! - Saving last FD path")
+    logger.debug("File loaded!")
+    logger.debug("Saving last FD path")
     
     # Save last location of file directory - we sohuld save only when necessary...
     save_last_path(data["current_path"])
+    
+    # Run integrity check
+    file_integrity_check()
         
     update_status("CSV loaded successfully",-1)
     dpg.configure_item("glee.menu.save", enabled=True)
     dpg.configure_item("glee.menu.save_as", enabled=True)
     return True
 
+def file_integrity_check():
+    """Check if the loaded CSV is intact and formatted correctly"""
+    for key, val in locale_csv.items():
+        
+        # Not enough delimiters
+        if len(list(val)) < len(locale_languages):
+                logger.warning("Found CSV line with not enough delimiters, fixing...")
+                
+                for _ in range(len(locale_languages)-len(list(val))):
+                    locale_csv[key].append("")
+                logger.debug("Fixed 👍")
+        
+        # Too many delimiters!
+        elif len(list(val)) > len(locale_languages):
+            logger.warning("Found CSV line with too many delimiters, attempting to fix...")
+            
+            while (len(list(locale_csv[key])) != len(locale_languages) and ("" in list(locale_csv[key]))):
+                locale_csv[key].remove("")
+            logger.debug("Fixed 👍")
+            
 def save_file():
     """Saves the locale CSV."""
     global csv_path, locale_csv
