@@ -6,6 +6,7 @@ import dearpygui.dearpygui as dpg
 import csv
 from supported_languages import languages
 from Dialogs.CsvPropertiesDialog import CsvPropertiesDialog
+from Errors import *
 
 VIEWPORT_LABEL = "Glee Localization Editor"
 
@@ -44,6 +45,7 @@ def reset() -> None:
     dpg.set_viewport_title(f"{VIEWPORT_LABEL}")
     
     logger.debug("Reset done!")
+    update_status("No CSV file loaded",1)
 
 def data_load() -> None:
     """
@@ -60,6 +62,11 @@ def data_load() -> None:
         new_path = f.read()
     default_path = new_path if new_path != "" else default_path
 
+def is_file_loaded() -> bool:
+    if locale_csv != None or locale_csv != {}:
+        return True
+    return False
+    
 def get_langs() -> None:
     """
         Sets the locale_languages variable to a list of languages
@@ -81,6 +88,10 @@ def get_langs() -> None:
             logger.debug("Got first non-comment line. This should be our header.")
             break
     
+    if len(locale_languages) == 0:
+        logger.error(f"No language keys were found! Is your CSV delimiter set correctly?")
+        raise NoLanguageFoundError(f"No languages found. CSV is invalid.")
+    
     valid_langs = list(languages.keys())
     for lang in locale_languages:
         if lang == "" or lang == "keys" or lang == "key":
@@ -88,7 +99,7 @@ def get_langs() -> None:
         
         if lang not in valid_langs:
             logger.error(f"'{lang}' was not recognized as a valid language. CSV is invalid.")
-            raise ValueError(f"{lang} is not a valid language. CSV is invalid.")
+            raise InvalidLanguageError(f"{lang} is not a valid language. CSV is invalid.")
 
 def load_language_flags(language_list: list | tuple) -> None:
     """
@@ -140,9 +151,24 @@ def get_save_path() -> str:
     return retval
 
 def set_csv_properties(s, a, data: dict):
+    global csv_delimiter, csv_quote_char, csv_dialect
+    
     csv_delimiter = data["delimiter"]
     csv_quote_char = data["quote"]
     csv_dialect = data["dialect"]
+    
+def file_exists(appdata) -> bool:
+    if not appdata["selections"] == {}:
+        return True
+    else:
+        if appdata["file_name"] != ".csv":
+            # TODO attempt to fix.
+            return False
+            
+        else:
+            logger.error("No file selected, can't load.")
+            update_status("No file selected, unable to load", 2)
+            return False
 
 def load_file(data: dict) -> bool:
     """
@@ -165,7 +191,6 @@ def load_file(data: dict) -> bool:
         logger.info("One file has been loaded already, resetting app...")
         reset()
 
-    #CsvPropertiesDialog(callback=set_csv_properties, abort_callback=lambda:(reset(), dpg.delete_item("glee.window.csv_properties_dialog")))
     
     # Getting file_path_name gets the files name, but if you select the 
     # same file again in the same directory, the name is empty. 
@@ -189,8 +214,11 @@ def load_file(data: dict) -> bool:
     try:
         get_langs()
         load_language_flags(locale_languages)
-    except ValueError:
-        update_status("Failed to load - invalid CSV keys", 4)
+    except InvalidLanguageError:
+        update_status("Failed to load - invalid CSV language keys", 4)
+        return False
+    except NoLanguageFoundError:
+        update_status("Failed to load - No language keys in CSV found", 4)
         return False
     
     
@@ -235,6 +263,12 @@ def save_file():
     if locale_csv == {}:
         logger.debug("Attempting to save non-existant CSV file, ignore.")
         # pop-up dialog with message that no save file is loaded
+        return
+    
+    if csv_path == None:
+        logger.debug("Saving CSV with no path, asking for path.")
+        # TODO: Save dialog pro save
+        logger.error("Not yet implemented, sorry!")
         return
     
     with open(csv_path, encoding="utf-8", mode="w", newline="") as csvfile:

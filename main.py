@@ -4,6 +4,7 @@ from supported_languages import languages
 import DataHandler as dh
 from StatusHandler import update_status
 from KeyboardWorkaround import letter_workaround
+from Dialogs.CsvPropertiesDialog import CsvPropertiesDialog
 
 button_list = []
 
@@ -100,6 +101,28 @@ def exit_app():
     if dh.file_changed():
         logger.debug("File dialog here!") # popup file dialog to save
     dpg.stop_dearpygui()
+    
+def add_string():
+    if not dh.is_file_loaded():
+        logger.debug("No file loaded, creating new empty CSV")
+        logger.debug("Not yet implemented, sorry!")
+        # TODO
+        # pop-up dialog to setup CSV file (dialect, filename and path)
+        # pop-up dialog to setup languages
+        # pop-up new key dialog
+    else:
+        pass
+        
+
+def create_dialog_csv_properties(se, appdata):
+    if dh.file_exists(appdata):
+        logger.debug("Creating CSV Properties dialog")
+        update_status("Getting CSV properties...",1)
+        dpg.split_frame()
+        CsvPropertiesDialog(callback=lambda s, a, data:(dh.set_csv_properties(s, a, data), create_ui(se,appdata), dpg.delete_item("glee.window.csv_properties_dialog")),
+                            abort_callback=lambda:(dh.reset(), dpg.delete_item("glee.window.csv_properties_dialog")),
+                            )
+        dpg.focus_item("glee.window.csv_properties_dialog")
 
 def create_ui(s, appdata):
     global locale_csv, button_list
@@ -110,8 +133,6 @@ def create_ui(s, appdata):
         open_locale_for(button_list[0], None)
         dpg.configure_item("glee.menu.close_file",enabled=True)
         dpg.set_viewport_title(f"{dh.VIEWPORT_LABEL} - {list(appdata['selections'].keys())[0]}")
-    else:
-        dh.reset()
 
 logger.debug("Starting Glee")
 dh.data_load() # Attempt to load last path
@@ -120,7 +141,7 @@ dh.data_load() # Attempt to load last path
 dpg.create_viewport(title=f'{dh.VIEWPORT_LABEL}', width=1000, height=700, resizable=False)
 
 # File Dialog
-with dpg.file_dialog(label="Open file", directory_selector=False, show=False, callback=create_ui, id="glee.window.open_file_dialog", width=700 ,height=400, modal=True, default_path=dh.get_last_path()):
+with dpg.file_dialog(label="Open file", directory_selector=False, show=False, callback=create_dialog_csv_properties, id="glee.window.open_file_dialog", width=700 ,height=400, modal=True, default_path=dh.get_last_path()):
     dpg.add_file_extension(".csv", color=(0, 255, 0, 255), custom_text="[CSV]")
 
 # Main window
@@ -136,6 +157,7 @@ with dpg.window(label="", width=dpg.get_viewport_width(), height=dpg.get_viewpor
             dpg.add_menu_item(label="Preferences")
             
     dpg.add_text("String", pos=(125,25))
+    dpg.add_button(label=" + ", pos=(275,25), height=25, tag="glee.button.add_string", callback=add_string)
     dpg.add_text("No string selected", pos=(310,25), tag="glee.text.string_key")
     dpg.add_text("Status:", pos=(10,dpg.get_viewport_height()-65))
     dpg.add_text("No CSV file loaded", color=(255,238,0),tag="glee.text.status", pos=(60,dpg.get_viewport_height()-65))
