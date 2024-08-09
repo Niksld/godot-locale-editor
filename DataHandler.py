@@ -5,14 +5,20 @@ import os
 import dearpygui.dearpygui as dpg
 import csv
 from supported_languages import languages
+from Dialogs.CsvPropertiesDialog import CsvPropertiesDialog
+
+VIEWPORT_LABEL = "Glee Localization Editor"
 
 csv_path = None
-save_path = None # gets inicialized to path
+save_path = None # gets initialized to path
 locale_csv: dict = {}
 original_csv: dict = {}
 locale_languages = None
 loaded_flags = []
-VIEWPORT_LABEL = "Glee Localization Editor"
+
+csv_delimiter = ";"
+csv_quote_char = "|"
+csv_dialect = "excel"
 
 def reset() -> None:
     """
@@ -133,6 +139,11 @@ def get_save_path() -> str:
     logger.debug(f"Save path is '{retval}'")
     return retval
 
+def set_csv_properties(s, a, data: dict):
+    csv_delimiter = data["delimiter"]
+    csv_quote_char = data["quote"]
+    csv_dialect = data["dialect"]
+
 def load_file(data: dict) -> bool:
     """
     # Loads CSV file
@@ -154,13 +165,15 @@ def load_file(data: dict) -> bool:
         logger.info("One file has been loaded already, resetting app...")
         reset()
 
+    #CsvPropertiesDialog(callback=set_csv_properties, abort_callback=lambda:(reset(), dpg.delete_item("glee.window.csv_properties_dialog")))
+    
     # Getting file_path_name gets the files name, but if you select the 
     # same file again in the same directory, the name is empty. 
     # To ensure the file ALWAYS opens, gotta do this hack. Ew.
     csv_path = list(data["selections"].items())[0][1]
     
     with open(csv_path, newline='', encoding="utf-8") as open_csv:
-        csv_reader = csv.reader(open_csv, delimiter=';', quotechar='|', dialect="excel")
+        csv_reader = csv.reader(open_csv, delimiter=csv_delimiter, quotechar=csv_quote_char, dialect=csv_dialect)
         
         for row in csv_reader:
             translations = []

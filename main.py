@@ -119,7 +119,7 @@ dh.data_load() # Attempt to load last path
 # Viewport
 dpg.create_viewport(title=f'{dh.VIEWPORT_LABEL}', width=1000, height=700, resizable=False)
 
-# File Dialogs
+# File Dialog
 with dpg.file_dialog(label="Open file", directory_selector=False, show=False, callback=create_ui, id="glee.window.open_file_dialog", width=700 ,height=400, modal=True, default_path=dh.get_last_path()):
     dpg.add_file_extension(".csv", color=(0, 255, 0, 255), custom_text="[CSV]")
 
