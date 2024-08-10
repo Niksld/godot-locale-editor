@@ -3,3 +3,9 @@ class InvalidLanguageError(Exception):
 
 class NoLanguageFoundError(Exception):
     pass
+
+class NoStringKeyError(Exception):
+    pass
+
+class TakenStringKeyError(Exception):
+    pass

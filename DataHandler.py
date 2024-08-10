@@ -5,7 +5,6 @@ import os
 import dearpygui.dearpygui as dpg
 import csv
 from supported_languages import languages
-from Dialogs.CsvPropertiesDialog import CsvPropertiesDialog
 from Errors import *
 
 VIEWPORT_LABEL = "Glee Localization Editor"
@@ -157,6 +156,50 @@ def set_csv_properties(s, a, data: dict):
     csv_quote_char = data["quote"]
     csv_dialect = data["dialect"]
     
+def add_new_string_key(new_key: str, position: int):
+    global locale_csv
+    logger.debug("Updating CSV file...")
+    print(new_key, position)
+    position += 1 # we are including the keys on top
+    print(new_key, position)
+    if new_key in list(locale_csv.keys()):
+        logger.debug("String key already exists, skipping...")
+        update_status("String Key already exists!",3)
+        raise TakenStringKeyError("This String Key Already Exists!")
+    
+    elif new_key == "" or new_key == None:
+        logger.debug("Empty String Key supplied, skipping...")
+        raise NoStringKeyError("No String key supplied")
+    
+    if len(locale_csv) == position:
+        locale_csv[new_key] = [""] * len(list(locale_csv.values())[0])
+        return
+    
+    new_locale = {}
+    for item in enumerate(locale_csv.items()):
+        i = item[0]
+        key = item[1][0]
+        val = item[1][1]
+        
+        #print(i, key, val)
+        
+        if i == position:
+            new_locale[new_key] = [""] * len(val)
+        
+        new_locale[key] = val
+        
+    locale_csv = new_locale
+    update_status("Added new String Key",-1)
+    logger.debug("New String Key added successfully")
+
+def remove_string_key(string_key: str):
+    removed_key = string_key
+    if locale_csv.pop(string_key):
+        if len(removed_key) > 16:
+            removed_key = removed_key[0:12] + "..."
+            update_status(f"Successfully removed {removed_key}",-1)
+    
+
 def file_exists(appdata) -> bool:
     if not appdata["selections"] == {}:
         return True

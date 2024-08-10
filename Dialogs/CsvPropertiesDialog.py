@@ -32,3 +32,5 @@ class CsvPropertiesDialog(Dialog):
         dpg.add_combo(label="Dialect", items=["excel"], width=100, default_value="excel", tag=f"{self.tag}.dialect", parent=self.tag)
         dpg.add_button(label="OK", pos=(self.width-95,self.height-30) ,callback=set_csv_callback, parent=self.tag, tag=f"{self.tag}.OK")
         dpg.add_button(label="Cancel", pos=(self.width-60,self.height-30), callback=self.abort_callback, parent=self.tag)
+        
+        dpg.focus_item(self.tag)
