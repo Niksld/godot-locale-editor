@@ -46,6 +46,13 @@ def reset() -> None:
     logger.debug("Reset done!")
     update_status("No CSV file loaded",1)
 
+def load_icons():
+    logger.debug("Loading icons...")
+    for icon in os.listdir("./images/icons"):
+        width, height, channels, data = dpg.load_image("./images/icons/"+icon)
+        with dpg.texture_registry():
+            dpg.add_static_texture(width=width, height=height, default_value=data, tag=f"glee.icon.{icon.removesuffix('.png')}")
+
 def data_load() -> None:
     """
         Loads programs save data - currently just last path.
@@ -121,10 +128,10 @@ def load_language_flags(language_list: list | tuple) -> None:
         try:
             width, height, channels, data = dpg.load_image("./images/flags/"+lang+".png")
             
-            if not dpg.does_item_exist(f"flag.{lang}"):
+            if not dpg.does_item_exist(f"glee.flag.{lang}"):
                 with dpg.texture_registry():
-                    dpg.add_static_texture(width=width, height=height, default_value=data, tag=f"flag.{lang}")
-                    loaded_flags.append(f"flag.{lang}")
+                    dpg.add_static_texture(width=width, height=height, default_value=data, tag=f"glee.flag.{lang}")
+                    loaded_flags.append(f"glee.flag.{lang}")
         except TypeError:
             logger.debug(f"Couldn't find flag for language '{lang}'. Missing flag?")
 
@@ -159,9 +166,7 @@ def set_csv_properties(s, a, data: dict):
 def add_new_string_key(new_key: str, position: int):
     global locale_csv
     logger.debug("Updating CSV file...")
-    print(new_key, position)
     position += 1 # we are including the keys on top
-    print(new_key, position)
     if new_key in list(locale_csv.keys()):
         logger.debug("String key already exists, skipping...")
         update_status("String Key already exists!",3)
@@ -181,8 +186,6 @@ def add_new_string_key(new_key: str, position: int):
         key = item[1][0]
         val = item[1][1]
         
-        #print(i, key, val)
-        
         if i == position:
             new_locale[new_key] = [""] * len(val)
         
@@ -195,9 +198,9 @@ def add_new_string_key(new_key: str, position: int):
 def remove_string_key(string_key: str):
     removed_key = string_key
     if locale_csv.pop(string_key):
-        if len(removed_key) > 16:
-            removed_key = removed_key[0:12] + "..."
-            update_status(f"Successfully removed {removed_key}",-1)
+        if len(removed_key) > 32:
+            removed_key = removed_key[0:31] + "..."
+        update_status(f"Successfully removed {removed_key}",-1)
     
 
 def file_exists(appdata) -> bool:
@@ -212,6 +215,12 @@ def file_exists(appdata) -> bool:
             logger.error("No file selected, can't load.")
             update_status("No file selected, unable to load", 2)
             return False
+        
+def is_key_empty(key):
+    if key in locale_csv.keys():
+        return list(locale_csv[key]) == [""] * len(list(locale_csv.values())[0])
+    else:
+        logger.error("String key doesn't exist!")
 
 def load_file(data: dict) -> bool:
     """
@@ -331,9 +340,7 @@ def file_changed() -> bool:
     """
     global locale_csv, original_csv
     
-    if locale_csv == original_csv:
-        return False
-    return True
+    return locale_csv == original_csv
 
 def get_desktop_path() -> str:
     """

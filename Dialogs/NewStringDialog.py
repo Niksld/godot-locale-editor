@@ -31,7 +31,6 @@ class NewStringDialog(Dialog):
         index_base = self.string_keys_list.index(dpg.get_value(f"{self.tag}.combo"))
         match dpg.get_value(f"{self.tag}.radio").lower():
             case "before":
-                print(self.string_keys_list)
                 return index_base
             case "after":
                 return index_base + 1 
