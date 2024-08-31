@@ -370,5 +370,47 @@ def get_last_path() -> str:
             return f.read()
     else:
         return os.environ("~/Desktop")
+    
+def get_warnings_or_errors(locale_string: str) -> dict:
+    """
+    Returns -> {"err":List, "warn":List} | None
+    """
+    retval = {"err":[], "warn":[]}
+    
+    formatters = {
+        "\\n":0,
+        "\\t":0,
+        "%s":0,
+        "%c":0,
+        "%d":0,
+        "%o":0,
+        "%x":0,
+        "%X":0,
+        "%f":0,
+        "%v":0,
+    }
+    
+    for formatter in formatters.keys():
+        formatters[str(formatter)] = locale_csv[locale_string][0].count(str(formatter))
+    
+    for locale_index, translated_string in enumerate(locale_csv[locale_string]):
+        for formatter in formatters.keys():
+            if translated_string.count(str(formatter)) != formatters[str(formatter)]:
+                difference = formatters[str(formatter)] - translated_string.count(str(formatter))
+                if "\\" in formatter:
+                    if difference < 0:
+                        mt_one = difference < -1
+                        retval["warn"].append(f"{languages[locale_languages[locale_index]]} - {-difference if mt_one else ''} {'e' if mt_one else 'E'}xtra '{str(formatter)}' formatter{'s' if mt_one else ''}!")
+                    else:
+                        mt_one = difference > 1
+                        retval["warn"].append(f"{languages[locale_languages[locale_index]]} - {difference if mt_one else ''} {'m' if mt_one else 'M'}issing '{str(formatter)}' formatter{'s' if mt_one else ''}!")
+                else:
+                    if difference < 0:
+                        mt_one = difference < -1
+                        retval["err"].append(f"{languages[locale_languages[locale_index]]} - {-difference if mt_one else ''} {'e' if mt_one else 'E'}xtra '{str(formatter)}' formatter{'s' if mt_one else ''}!")
+                    else:
+                        mt_one = difference > 1
+                        retval["err"].append(f"{languages[locale_languages[locale_index]]} - {difference if mt_one else ''} {'m' if mt_one else 'M'}issing '{str(formatter)}' formatter{'s' if mt_one else ''}!")
+    return retval if (len(retval["err"]) or len(retval["warn"])) else None 
 
 save_path = get_save_path() # We have to get it for the first time, yknow?

@@ -8,6 +8,7 @@ from KeyboardWorkaround import letter_workaround
 from Dialogs.CsvPropertiesDialog import CsvPropertiesDialog
 from Dialogs.NewStringDialog import NewStringDialog
 from Dialogs.Warning import Warning
+from Dialogs.Preferences import Preferences
 from Errors import *
 
 VIEWPORT_MIN_SIZE = [500,300]
@@ -53,6 +54,28 @@ def open_locale_for(item_string: str, a: dict) -> None:
         dpg.set_value(f"glee.locale_field.{lang}", dh.locale_csv[item_string][index])
         dpg.configure_item(f"glee.locale_field.{lang}", hint=dh.locale_csv[item_string][index])
         dpg.set_item_user_data(f"glee.locale_field.{lang}", {"locale_string":item_string,"language":dh.locale_languages[index], "lang_index":index})
+    
+    display_warnings_or_errors(item_string)
+    
+def display_warnings_or_errors(string: str):
+    if dpg.does_item_exist("glee.main_window.issue_tracker"):
+        dpg.delete_item("glee.main_window.issue_tracker")
+        dpg.delete_item("glee.main_window.issue_tracker.tooltip")
+        dpg.split_frame(delay=1)
+        
+    issues = dh.get_warnings_or_errors(string)
+    if issues is None:
+        logger.debug("None found!")
+        return
+    
+    dpg.add_image("glee.icon.warning" if len(issues["err"]) == 0 else "glee.icon.error", tag="glee.main_window.issue_tracker", height=32, width=32, parent="glee.main_window", pos=(dpg.get_item_width("glee.main_window")/3.1+len(dpg.get_value("glee.text.string_key"))*7,dpg.get_item_height("glee.main_window")/32))
+    with dpg.tooltip(parent="glee.main_window.issue_tracker", tag="glee.main_window.issue_tracker.tooltip"):
+        for messages in issues.values():
+            if type(messages) == list:
+                for message in messages:
+                    dpg.add_text(message)
+            else:
+                dpg.add_text(messages)
 
 def generate_buttons(csv: dict) -> None:
     """Generates buttons for each string key""" 
@@ -119,6 +142,7 @@ def update_translation(sender, new_string, data):
             
     dh.locale_csv[data["locale_string"]][data["lang_index"]] = new_string  
     dpg.set_value(sender, new_string)
+    display_warnings_or_errors(dpg.get_value("glee.text.string_key"))
     
 def exit_app():
     logger.debug("Got request to end app")
@@ -289,6 +313,9 @@ dpg.create_viewport(title=f'{dh.VIEWPORT_LABEL}', width=1000, height=700, min_wi
 with dpg.file_dialog(label="Open file", directory_selector=False, show=False, callback=create_dialog_csv_properties, id="glee.window.open_file_dialog", width=700 ,height=400, modal=True, default_path=dh.get_last_path()):
     dpg.add_file_extension(".csv", color=(0, 255, 0, 255), custom_text="[CSV]")
 
+# Preferences dialog
+Preferences()
+
 # Titlebar window
 def drag_cb():
     vp_pos = dpg.get_viewport_pos()
@@ -306,7 +333,7 @@ with dpg.window(no_move=True, no_resize=True, no_title_bar=True, pos=[0, -70], n
     with dpg.group(horizontal=True, tag="glee.titlebar.group"):
         dpg.add_text("Glee Localization Editor", pos=(10, dpg.get_item_height("glee.titlebar")-29), tag="glee.titlebar.label")
         dpg.add_button(label="X", pos=(dpg.get_item_width("glee.titlebar")-33, dpg.get_item_height("glee.titlebar")-27), width=30, height=25, callback=exit_app, tag="glee.titlebar.x")
-        #dpg.add_button(label="+", pos=(dpg.get_item_width("glee.titlebar")-65, dpg.get_item_height("glee.titlebar")-27), width=30, height=25, callback=toggle_windowed_max, tag="glee.titlebar.max") 
+        dpg.add_button(label="+", pos=(dpg.get_item_width("glee.titlebar")-65, dpg.get_item_height("glee.titlebar")-27), width=30, height=25, callback=toggle_windowed_max, tag="glee.titlebar.max") 
         # Maximizing and resizing is buggy as all hell. Not touching that rn.
         dpg.add_button(label="-", pos=(dpg.get_item_width("glee.titlebar")-97, dpg.get_item_height("glee.titlebar")-27), width=30, height=25, callback=dpg.minimize_viewport, tag="glee.titlebar.min")
 
@@ -319,8 +346,8 @@ with dpg.window(label="", width=dpg.get_viewport_width(), height=dpg.get_viewpor
             dpg.add_menu_item(label="Save as..", enabled=False, tag="glee.menu.save_as")
             dpg.add_menu_item(label="Close CSV File", callback=close_file_callback, enabled=False, tag="glee.menu.close_file")
             dpg.add_menu_item(label="Exit", callback=exit_app)
-        with dpg.menu(label="Options", enabled=False):
-            dpg.add_menu_item(label="Preferences")
+        with dpg.menu(label="Options", enabled=True):
+            dpg.add_menu_item(label="Preferences", callback=lambda: (dpg.show_item('glee.window.preferences')))
             
     dpg.add_text("String", pos=(dpg.get_item_width("glee.main_window")/7.5,dpg.get_item_height("glee.main_window")/24))
     dpg.add_button(label="+", show=False, pos=(dpg.get_item_width("glee.main_window")/3.5,dpg.get_item_height("glee.main_window")/26), height=23, width=25, tag="glee.button.add_string", callback=add_string)
