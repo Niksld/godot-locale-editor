@@ -1,9 +1,11 @@
 from loguru import logger
 from StatusHandler import update_status
 from platform import system as platform_system
+from default_config import default_config
 import os
 import dearpygui.dearpygui as dpg
 import csv
+import json
 from supported_languages import languages
 from Errors import *
 
@@ -412,5 +414,25 @@ def get_warnings_or_errors(locale_string: str) -> dict:
                         mt_one = difference > 1
                         retval["err"].append(f"{languages[locale_languages[locale_index]]} - {difference if mt_one else ''} {'m' if mt_one else 'M'}issing '{str(formatter)}' formatter{'s' if mt_one else ''}!")
     return retval if (len(retval["err"]) or len(retval["warn"])) else None 
+
+def load_config() -> dict | None:
+    global default_path
+    
+    logger.debug("Loading config")
+    
+    if not os.path.exists(save_path+"config.cfg"):
+        logger.info("No config found, creating ...")
+        with open(save_path+"config.cfg", mode="w+") as f:
+            f.write(json.dumps(default_config))
+    
+    with open(save_path+"config.cfg", encoding="utf-8", mode="r") as f:
+        config = json.loads(f.read())
+    
+    if config.keys() != default_config.keys():
+        logger.error("Loaded config file doesn't match settings structure. Corrupted File?")
+        return None 
+
+def save_config():
+    pass
 
 save_path = get_save_path() # We have to get it for the first time, yknow?

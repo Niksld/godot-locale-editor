@@ -33,7 +33,7 @@ def shortcut_handler():
         dh.save_file()
 
 with dpg.handler_registry():
-    dpg.add_key_down_handler(dpg.mvKey_Control, callback=shortcut_handler)
+    dpg.add_key_down_handler(dpg.mvKey_LControl, callback=shortcut_handler)
 
 # --- GUI Methods ---
 def open_locale_for(item_string: str, a: dict) -> None:

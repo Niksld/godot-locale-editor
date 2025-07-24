@@ -1,19 +1,15 @@
 import dearpygui.dearpygui as dpg
+from loguru import logger
+from default_config import default_config
+from DataHandler import load_config as dh_load_config
 
 class Preferences:
     def __init__(self) -> None:
         self.width = dpg.get_viewport_width()-10
         self.height = dpg.get_viewport_height()-100
         self.tag = "glee.window.preferences"
-        self.default_settings = {
-                "General":{"Test Value":1},
-                "Layout": {
-                            "Resolution":[1000,700],
-                            "Test Value":2
-                        },
-                "Locale": {"Language":"en"}
-            }
-        self.settings = self.default_settings
+        self.default_settings = default_config
+        self.settings = None # Load current config
         
         self.settings_widgets = {
             "General": {
@@ -64,4 +60,14 @@ class Preferences:
         for setting in self.default_settings[category]:
             self.settings_widgets[str(category)][str(setting)]()
             
+    def load_config(self) -> dict:
+        retval = dh_load_config()
         
+        if retval == None:
+            logger.info("Using default config...")
+            return default_config
+        
+        return retval
+    
+    def apply_setting(self, setting: str, value: str | int | list):
+        pass
