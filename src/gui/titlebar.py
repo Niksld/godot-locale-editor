@@ -1,4 +1,4 @@
-from widget import Widget
+from gui.widget import Widget
 import dearpygui.dearpygui as dpg
 
 class Titlebar(Widget):
@@ -35,4 +35,4 @@ class Titlebar(Widget):
             return
 
         if dpg.is_item_focused(self.drag_vp_wnd):
-            dpg.set_viewport_pos([vp_pos[0] + drag_delta, vp_pos[1] + drag_delta])
+            dpg.set_viewport_pos([vp_pos[0] + drag_delta[0], vp_pos[1] + drag_delta[1]])

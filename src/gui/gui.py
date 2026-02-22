@@ -1,15 +1,20 @@
+from typing import List
 from loguru import logger as log
 from config_handler import ConfigHandler
 
 import DataHandler as dh
 import dearpygui.dearpygui as dpg
+from gui.main_window import MainWindow
+from gui.titlebar import Titlebar
+from gui.error import Error
 
 class GUI:
     
-    def __init__(self, width: int = 1000, height: int = 730) -> None:
+    def __init__(self, width: int = 1000, height: int = 730, min_dims: List[int,int] = [500, 400]) -> None:
         
         self.width: int  = width
         self.height: int = height
+        self.min_dims: List[int, int] = min_dims
         
         dpg.create_context()
         
@@ -27,7 +32,9 @@ class GUI:
             dpg.add_item_resize_handler(callback=self.on_resize)
             
         
-        dpg.create_viewport(title=f'{dh.VIEWPORT_LABEL}', width=1000, height=700, min_width=500, resizable=True, decorated=False)
+        dpg.create_viewport(title=f'{dh.VIEWPORT_LABEL}', width=self.width, height=self.height, min_width=self.min_dims[0], min_height=self.min_dims[1], decorated=False)
+        self.titlebar = Titlebar(self.exit_app, self.toggle_windowed_max)
+        self.main_window = MainWindow()
         
     def shortcut_handler(self) -> None:
         """	 Handles keyboard shortcuts.
@@ -61,13 +68,13 @@ class GUI:
         
         display_warnings_or_errors(item_string)
     
-    def exit_app():
+    def exit_app(self, x):
         log.debug("Got request to end app")
         if dh.file_changed():
             log.debug("File dialog here!") # popup file dialog to save
         else:
             log.debug("File didnt change, no need to save!")
-        _exit(0)
+        exit(0)
         
     def close_file_callback():
         close_file = lambda: (dh.reset(), update_status("No CSV file loaded",1), hide_edit_buttons(), dpg.configure_item("glee.menu.close_file", enabled=False))
@@ -104,7 +111,8 @@ class GUI:
             
         is_maximized = not is_maximized
     
-    def on_resize():
+    def on_resize(self, x):
+        print(x)
         
         mouse_pos = dpg.get_mouse_pos()
         print(mouse_pos)
@@ -118,13 +126,13 @@ class GUI:
         
         new_size = (dpg.get_item_width("glee.main_window"), dpg.get_item_height("glee.main_window"))
         
-        if new_size[0] < VIEWPORT_MIN_SIZE[0]:
-            dpg.set_viewport_width(VIEWPORT_MIN_SIZE[0])
+        if new_size[0] < self.min_dims[0]:
+            dpg.set_viewport_width(self.min_dims[0])
         else:
             dpg.set_viewport_width(new_size[0])
             
-        if new_size[1] < VIEWPORT_MIN_SIZE[1]:
-            dpg.set_viewport_height(VIEWPORT_MIN_SIZE[1]+30)
+        if new_size[1] < self.min_dims[1]:
+            dpg.set_viewport_height(self.min_dims[1]+30)
         else:
             dpg.set_viewport_height(new_size[1]+30)
         
@@ -140,4 +148,7 @@ class GUI:
         
         # Re-adjust all positions...
         #print("readjust the rest")
+        
+    def show_error(self, msg: str, callback=lambda: dpg.delete_item("glee.window.error")) -> None:
+        Error(label="Error", msg=msg, callback=callback)
         

@@ -1,4 +1,4 @@
-from widget import Widget
+from gui.widget import Widget
 
 import dearpygui.dearpygui as dpg
 

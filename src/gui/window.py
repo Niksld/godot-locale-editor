@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from widget import Widget
+from gui.widget import Widget
 
 class Window(Widget):
     """ Abstract base class for Windows"""

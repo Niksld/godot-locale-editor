@@ -1,5 +1,5 @@
 from loguru import logger as log
-from window import Window
+from gui.window import Window
 
 import dearpygui.dearpygui as dpg
 
@@ -8,21 +8,21 @@ class MainWindow(Window):
     def __init__(self) -> None:
         super().__init__()
         
-        with dpg.window(label="", width=dpg.get_viewport_width(), height=dpg.get_viewport_height()-30, no_move=True, no_collapse=True, no_resize=True, no_title_bar=True, pos=(0,30), tag="glee.main_window", min_size=VIEWPORT_MIN_SIZE):
+        with dpg.window(label="", width=dpg.get_viewport_width(), height=dpg.get_viewport_height()-30, no_move=True, no_collapse=True, no_resize=True, no_title_bar=True, pos=(0,30), tag="glee.main_window"):
             with dpg.menu_bar():
                 with dpg.menu(label="File"):
                     dpg.add_menu_item(label="Load locale .csv", callback=lambda: dpg.show_item("glee.window.open_file_dialog"))
-                    dpg.add_menu_item(label="Save", enabled=False, tag="glee.menu.save", callback=dh.save_file)
+                    dpg.add_menu_item(label="Save", enabled=False, tag="glee.menu.save", callback=lambda: print("dh.save_file()"))
                     dpg.add_menu_item(label="Save as..", enabled=False, tag="glee.menu.save_as")
-                    dpg.add_menu_item(label="Close CSV File", callback=close_file_callback, enabled=False, tag="glee.menu.close_file")
-                    dpg.add_menu_item(label="Exit", callback=exit_app)
+                    dpg.add_menu_item(label="Close CSV File", callback=lambda: print("close_file_callback"), enabled=False, tag="glee.menu.close_file")
+                    dpg.add_menu_item(label="Exit", callback=lambda: print("exit_app"))
                 with dpg.menu(label="Options", enabled=True):
                     dpg.add_menu_item(label="Preferences", callback=lambda: (dpg.show_item('glee.window.preferences')))
                     
             dpg.add_text("String", pos=(dpg.get_item_width("glee.main_window")/7.5,dpg.get_item_height("glee.main_window")/24))
-            dpg.add_button(label="+", show=False, pos=(dpg.get_item_width("glee.main_window")/3.5,dpg.get_item_height("glee.main_window")/26), height=23, width=25, tag="glee.button.add_string", callback=add_string)
+            dpg.add_button(label="+", show=False, pos=(dpg.get_item_width("glee.main_window")/3.5,dpg.get_item_height("glee.main_window")/26), height=23, width=25, tag="glee.button.add_string", callback=lambda: print("add_string"))
             dpg.add_text("No string selected", pos=(dpg.get_item_width("glee.main_window")/3.1,dpg.get_item_height("glee.main_window")/24), tag="glee.text.string_key")
-            dpg.add_button(label=" Delete String ", show=False, pos=(dpg.get_item_width("glee.main_window")/1.125,dpg.get_item_height("glee.main_window")/26), height=23, tag="glee.button.delete_string", callback=remove_string_callback)
+            dpg.add_button(label=" Delete String ", show=False, pos=(dpg.get_item_width("glee.main_window")/1.125,dpg.get_item_height("glee.main_window")/26), height=23, tag="glee.button.delete_string", callback=lambda: print("remove_string_callback"))
             dpg.add_text("Status:", pos=(dpg.get_item_width("glee.main_window")/96,dpg.get_item_width("glee.main_window")/1.565))
             dpg.add_text("No CSV file loaded", color=(255,238,0),tag="glee.text.status", pos=(dpg.get_item_width("glee.main_window")/16,dpg.get_item_width("glee.main_window")/1.565))
             dpg.add_child_window(width=dpg.get_viewport_width()/3.3, height=dpg.get_item_height("glee.main_window")/1.145, pos=(dpg.get_viewport_width()/96,dpg.get_viewport_width()/20), tag="glee.window.buttons")
@@ -32,14 +32,14 @@ class MainWindow(Window):
             
     def create_ui(self, s, appdata) -> None:
         global locale_csv, button_list
-        
-        if dh.load_file(appdata):
+        """
+        if  dh.load_file(appdata):
             generate_buttons(dh.locale_csv)
             generate_input_fields()
             open_locale_for(button_list[0], None)
             dpg.configure_item(f"{self.tag_prefix}.menu.close_file",enabled=True)
             dpg.set_viewport_title(f"{dh.VIEWPORT_LABEL} - {list(appdata['selections'].keys())[0]}")
-            show_edit_buttons()
+            show_edit_buttons() """
             
     def show_edit_buttons(self) -> None:
         dpg.show_item(f"{self.tag_prefix}button.add_string")
@@ -82,14 +82,14 @@ class MainWindow(Window):
         for item in dpg.get_item_children("glee.window.buttons")[1]:
             dpg.delete_item(item)
         
-        generate_buttons(dh.locale_csv)
+        #generate_buttons(dh.locale_csv)
         dpg.set_y_scroll("glee.window.buttons",scroll_amount)
                 
     def generate_input_fields():
         """Generates input field for each language"""
         global languages
         log.debug("Creating input fields ...")
-        
+        """
         if dh.locale_languages == None:
             log.error("Locale header is none when generating input fields, cant generate...")
             return
@@ -109,7 +109,8 @@ class MainWindow(Window):
             
             temp = dpg.add_input_text(hint=lang[1], parent="glee.window.edit", width=dpg.get_item_width("glee.window.edit")-15, height=65, pos=(55, lang[0]*45+25), callback=update_translation, tag=f"glee.locale_field.{lang[1]}")
             dpg.set_value(temp, lang[1])
-
+"""
+"""
     def update_translation(sender, new_string, data):
         global locale_csv, letter_workaround
         
@@ -121,7 +122,8 @@ class MainWindow(Window):
         dh.locale_csv[data["locale_string"]][data["lang_index"]] = new_string  
         dpg.set_value(sender, new_string)
         display_warnings_or_errors(dpg.get_value("glee.text.string_key"))
-        
+        """
+"""
     def add_string():
         if not dh.is_file_loaded():
             log.debug("No file loaded, creating new empty CSV")
@@ -188,3 +190,4 @@ class MainWindow(Window):
         dh.remove_string_key(string)
         regenerate_buttons()
         open_locale_for(button_list[button_last_position], None)
+"""
