@@ -1,5 +1,6 @@
 from loguru import logger as log
 from gui.window import Window
+from gui.file_dialog import FileDialog
 
 import dearpygui.dearpygui as dpg
 
@@ -11,7 +12,7 @@ class MainWindow(Window):
         with dpg.window(label="", width=dpg.get_viewport_width(), height=dpg.get_viewport_height()-30, no_move=True, no_collapse=True, no_resize=True, no_title_bar=True, pos=(0,30), tag="glee.main_window"):
             with dpg.menu_bar():
                 with dpg.menu(label="File"):
-                    dpg.add_menu_item(label="Load locale .csv", callback=lambda: dpg.show_item("glee.window.open_file_dialog"))
+                    dpg.add_menu_item(label="Load locale .csv", callback=lambda: FileDialog(title="Load Locale CSV", file_types=[".csv"], width=700, height=400))
                     dpg.add_menu_item(label="Save", enabled=False, tag="glee.menu.save", callback=lambda: print("dh.save_file()"))
                     dpg.add_menu_item(label="Save as..", enabled=False, tag="glee.menu.save_as")
                     dpg.add_menu_item(label="Close CSV File", callback=lambda: print("close_file_callback"), enabled=False, tag="glee.menu.close_file")

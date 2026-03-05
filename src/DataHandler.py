@@ -371,7 +371,7 @@ def get_last_path() -> str:
         with open(save_path+"data.dat", encoding="utf-8", mode="r") as f:
             return f.read()
     else:
-        return os.environ("~/Desktop")
+        return os.path.normpath(os.path.expanduser("~/Desktop"))
     
 def get_warnings_or_errors(locale_string: str) -> dict:
     """
